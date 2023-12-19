@@ -1,28 +1,46 @@
 import express from "express";
 import jwt from "jsonwebtoken";
+import {z} from 'zod';
 
 import { authenticateJWT } from "../middleware/index";
 import { User } from "../db";
 
 const router = express.Router();
 
-
+const userInput = z.object({
+  username: z.string().min(1).max(10),
+  password: z.string().min(6).max(20)
+})
 
 router.post("/signup", async (req, res) => {
   if(!process.env.SECRET) {
     console.error('SECRET is not defined in the environment variables');
     process.exit(1); 
   }
-  const { username, password } = req.body;
-  const user = await User.findOne({ username });
+
+  let parsedInput = userInput.safeParse(req.body);
+  if(!parsedInput.success) {
+    return res.status(411).json({
+      "message":"Invalid Input"
+    })
+  }
+  
+  if(typeof parsedInput.data.username !== "string") {
+    res.status(411).json({
+      "message":"Wrong input type"
+    })
+    return;
+  }
+
+  const user = await User.findOne({ username: parsedInput.data.username });
   if (user) {
     res.status(401).json({
       message: "User Already Exists",
     });
   } else {
     const newUser = new User({
-      username,
-      password,
+      username: parsedInput.data.username,
+      password: parsedInput.data.password,
     });
     await newUser.save();
 

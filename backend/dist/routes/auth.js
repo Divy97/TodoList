@@ -14,16 +14,32 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const zod_1 = require("zod");
 const index_1 = require("../middleware/index");
 const db_1 = require("../db");
 const router = express_1.default.Router();
+let userInput = zod_1.z.object({
+    username: zod_1.z.string().min(1),
+    password: zod_1.z.string().min(1)
+});
 router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (!process.env.SECRET) {
         console.error('SECRET is not defined in the environment variables');
         process.exit(1);
     }
-    const { username, password } = req.body;
-    const user = yield db_1.User.findOne({ username });
+    let parsedInput = userInput.safeParse(req.body);
+    if (!parsedInput.success) {
+        return res.status(411).json({
+            "message": "Invalid Innnnnnnnnnnnnnnnnput"
+        });
+    }
+    if (typeof parsedInput.data.username !== "string") {
+        res.status(411).json({
+            "message": "Wrong input type"
+        });
+        return;
+    }
+    const user = yield db_1.User.findOne({ username: parsedInput.data.username });
     if (user) {
         res.status(401).json({
             message: "User Already Exists",
@@ -31,8 +47,8 @@ router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
     else {
         const newUser = new db_1.User({
-            username,
-            password,
+            username: parsedInput.data.username,
+            password: parsedInput.data.password,
         });
         yield newUser.save();
         const token = jsonwebtoken_1.default.sign({ id: newUser._id }, process.env.SECRET, { expiresIn: "1h" });

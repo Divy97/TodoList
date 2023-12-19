@@ -1,19 +1,33 @@
 import express from "express";
+import {z} from 'zod';
+
 import { authenticateJWT } from "../middleware/index";
 import { Todo } from "../db";
+
 const router = express.Router();
 
-interface TodoInput {
-  title: string,
-  description: string
-}
+// interface TodoInput {
+//   title: string,
+//   description: string
+// }
+
+let todoInputProps = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1)
+})
 
 router.post("/todos", authenticateJWT, (req, res) => {
-  const inputs: TodoInput = req.body;
+
+  const parseInput = todoInputProps.safeParse(req.body);
+  if(!parseInput.success) {
+    return res.status(411).json({
+      "message":"Invalid Input"
+    })
+  }
   const done = false;
   const userId = req.headers['userId'];
 
-  const newTodo = new Todo({ title: inputs.title, description: inputs.description, done, userId });
+  const newTodo = new Todo({ title: parseInput.data.title, description: parseInput.data.description, done, userId });
 
   newTodo
     .save()
