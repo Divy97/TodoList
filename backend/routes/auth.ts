@@ -1,16 +1,12 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import {z} from 'zod';
+
 
 import { authenticateJWT } from "../middleware/index";
 import { User } from "../db";
-
+// import {userInput} from '../../common/src/index'
 const router = express.Router();
 
-const userInput = z.object({
-  username: z.string().min(1).max(10),
-  password: z.string().min(6).max(20)
-})
 
 router.post("/signup", async (req, res) => {
   if(!process.env.SECRET) {
