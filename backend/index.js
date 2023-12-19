@@ -14,7 +14,9 @@ app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/todo", todoRoutes);
 
-mongoose.connect('mongodb+srv://divyparekh1810:qwertyuiop@cluster0.locug2j.mongodb.net/courses', { useNewUrlParser: true, useUnifiedTopology: true });
+require('dotenv').config();
+
+mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const db = mongoose.connection;
 
