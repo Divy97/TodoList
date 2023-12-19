@@ -1,9 +1,11 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
 
-const authRoutes = require("./routes/auth");
-const todoRoutes = require("./routes/todo");
+import express from 'express';
+import mongoose  from 'mongoose';
+import cors from 'cors';
+
+import authRoutes from './routes/auth';
+import todoRoutes from './routes/todo';
+
 
 const app = express();
 const port = 8080;
@@ -16,7 +18,12 @@ app.use("/todo", todoRoutes);
 
 require('dotenv').config();
 
-mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+if (!process.env.MONGO_URL) {
+  console.error('MONGO_URL is not defined in the environment variables');
+  process.exit(1); 
+}
+
+mongoose.connect(process.env.MONGO_URL, {dbName:'courses'});
 
 const db = mongoose.connection;
 

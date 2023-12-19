@@ -1,12 +1,18 @@
-const express = require("express");
-const jwt = require("jsonwebtoken");
+import express from "express";
+import jwt from "jsonwebtoken";
 
-const { authenticateJWT, SECRET } = require("../middleware/index");
-const { User } = require("../db");
+import { authenticateJWT } from "../middleware/index";
+import { User } from "../db";
 
 const router = express.Router();
 
+
+
 router.post("/signup", async (req, res) => {
+  if(!process.env.SECRET) {
+    console.error('SECRET is not defined in the environment variables');
+    process.exit(1); 
+  }
   const { username, password } = req.body;
   const user = await User.findOne({ username });
   if (user) {
@@ -20,16 +26,20 @@ router.post("/signup", async (req, res) => {
     });
     await newUser.save();
 
-    const token = jwt.sign({ id: newUser._id }, SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id: newUser._id }, process.env.SECRET, { expiresIn: "1h" });
     res.json({ message: "User created successfully", token });
   }
 });
 
 router.post("/login", async (req, res) => {
+  if(!process.env.SECRET) {
+    console.error('SECRET is not defined in the environment variables');
+    process.exit(1); 
+  }
   const { username, password } = req.body;
   const user = await User.findOne({ username, password });
   if (user) {
-    const token = jwt.sign({ id: user._id }, SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id: user._id }, process.env.SECRET, { expiresIn: "1h" });
     res.json({ message: "Logged in successfully", token });
   } else {
     res.status(403).json({ message: "Invalid username or password" });
@@ -37,7 +47,9 @@ router.post("/login", async (req, res) => {
 });
 
 router.get("/me", authenticateJWT, async (req, res) => {
-  const user = await User.findOne({ _id: req.userId });
+  const userId = req.headers['userId'];
+  
+  const user = await User.findOne({ _id: userId });
   if (user) {
     res.json({ username: user.username });
   } else {
@@ -45,4 +57,4 @@ router.get("/me", authenticateJWT, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
