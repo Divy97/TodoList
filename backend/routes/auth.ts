@@ -1,30 +1,28 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-
+import { userInput } from "@divy97/common";
 
 import { authenticateJWT } from "../middleware/index";
 import { User } from "../db";
-// import {userInput} from '../../common/src/index'
 const router = express.Router();
 
-
 router.post("/signup", async (req, res) => {
-  if(!process.env.SECRET) {
-    console.error('SECRET is not defined in the environment variables');
-    process.exit(1); 
+  if (!process.env.SECRET) {
+    console.error("SECRET is not defined in the environment variables");
+    process.exit(1);
   }
 
   let parsedInput = userInput.safeParse(req.body);
-  if(!parsedInput.success) {
+  if (!parsedInput.success) {
     return res.status(411).json({
-      "message":"Invalid Input"
-    })
+      message: "Invalid Input",
+    });
   }
-  
-  if(typeof parsedInput.data.username !== "string") {
+
+  if (typeof parsedInput.data.username !== "string") {
     res.status(411).json({
-      "message":"Wrong input type"
-    })
+      message: "Wrong input type",
+    });
     return;
   }
 
@@ -40,20 +38,24 @@ router.post("/signup", async (req, res) => {
     });
     await newUser.save();
 
-    const token = jwt.sign({ id: newUser._id }, process.env.SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id: newUser._id }, process.env.SECRET, {
+      expiresIn: "1h",
+    });
     res.json({ message: "User created successfully", token });
   }
 });
 
 router.post("/login", async (req, res) => {
-  if(!process.env.SECRET) {
-    console.error('SECRET is not defined in the environment variables');
-    process.exit(1); 
+  if (!process.env.SECRET) {
+    console.error("SECRET is not defined in the environment variables");
+    process.exit(1);
   }
   const { username, password } = req.body;
   const user = await User.findOne({ username, password });
   if (user) {
-    const token = jwt.sign({ id: user._id }, process.env.SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id: user._id }, process.env.SECRET, {
+      expiresIn: "1h",
+    });
     res.json({ message: "Logged in successfully", token });
   } else {
     res.status(403).json({ message: "Invalid username or password" });
@@ -61,8 +63,8 @@ router.post("/login", async (req, res) => {
 });
 
 router.get("/me", authenticateJWT, async (req, res) => {
-  const userId = req.headers['userId'];
-  
+  const userId = req.headers["userId"];
+
   const user = await User.findOne({ _id: userId });
   if (user) {
     res.json({ username: user.username });
